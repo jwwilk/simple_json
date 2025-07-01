@@ -1,0 +1,39 @@
+// Distributed under the MIT License, see accompanying file LICENSE.txt
+// Copyright John W. Wilkinson 2025
+//
+// Parses and formats JSON.
+// Does not support real numbers or escaping of characters. No Unicode support.
+
+#pragma once
+#include <expected>
+#include <vector>
+#include <map>
+#include <string>
+#include <variant>
+
+namespace simple_json
+{
+    struct Object;
+    struct Array;
+
+    struct Null // a JSON null value.
+    {}; 
+
+    using Value = std::variant<std::string, bool, int64_t, Null, Array, Object>;
+
+    struct Array : public std::vector<Value>
+    {
+    };
+
+    struct Object : public std::map<std::string, Value>
+    {
+    };
+
+    // parses a JSON string and return an Object or an error message
+    //
+    std::expected<Value, std::string> parse( const std::string& json_str );
+
+    // formats an Object as a JSON string and writes it to the output stream
+    //
+    std::ostream& operator<<( std::ostream& os, const Value& value );
+} // namespace simple_json

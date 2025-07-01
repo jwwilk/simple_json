@@ -1,0 +1,60 @@
+# Based on Microsoft style but customized for better initializer formatting
+BasedOnStyle: Microsoft
+
+# Align initializer list items after the opening bracket
+AlignAfterOpenBracket: Align
+
+# Disable argument/parameter bin-packing for better readability
+BinPackArguments: false
+BinPackParameters: false
+
+# Use consistent brace-wrapping style
+BraceWrapping:
+  AfterClass: true
+  AfterControlStatement: true
+  AfterEnum: true
+  AfterFunction: true
+  AfterNamespace: true
+  AfterStruct: true
+  AfterUnion: true
+  BeforeCatch: true
+  BeforeElse: true
+  IndentBraces: false
+  SplitEmptyFunction: false
+  SplitEmptyRecord: false
+  SplitEmptyNamespace: false
+
+BreakBeforeBraces: Custom
+Cpp11BracedListStyle: true
+
+# Keep brace-initializers vertically aligned
+AllowAllConstructorInitializersOnNextLine: false
+AllowShortBlocksOnASingleLine: false
+
+# General formatting
+IndentWidth: 4
+TabWidth: 4
+UseTab: Never
+
+# Formatting for lists and expressions
+ColumnLimit: 0  # No forced wrapping at column limit
+KeepEmptyLinesAtTheStartOfBlocks: false	# keep empty line after "public", "private"
+SpacesInContainerLiterals: false
+SpaceBeforeCpp11BracedList: false
+SpaceBeforeParens: ControlStatements
+SpaceBeforeRangeBasedForLoopColon: true
+SpaceInEmptyBlock: false
+SpaceInEmptyParentheses: false
+SpacesInParentheses: true
+SpacesInSquareBrackets: true
+
+# Optional: For pointer/reference alignment
+PointerAlignment: Left
+
+# Optional: Customize constructor initializer formatting
+ConstructorInitializerAllOnOneLineOrOnePerLine: true
+ConstructorInitializerIndentWidth: 4
+
+# Namespaces
+NamespaceIndentation: All
+
