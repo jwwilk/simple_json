@@ -25,6 +25,7 @@ namespace
 
             if ( result )
             {
+                // Check that we have consumed the entire input string
                 skip_whitespace();
                 if ( posn_() != end_ )
                 {
@@ -115,7 +116,7 @@ namespace
                 if ( *posn_() == ']' )
                 {
                     posn_.incr();
-                    break; // end of object
+                    break; // end of array
                 }
 
                 if ( *posn_() == ',' )
@@ -215,7 +216,9 @@ namespace
                 return std::unexpected( "end of string reached while looking for second of pair" + where() );
             }
 
-            return parse_value().transform( [ & ]( const auto& value ) { // Create a pair with the parsed name and value
+            // Create and return a pair with the parsed name and value.
+            // Note if parse_value() fails, the error will be propagated.
+            return parse_value().transform( [ & ]( const auto& value ) {
                 return Object::value_type{ *name, value };
             } );
         }
@@ -274,17 +277,17 @@ namespace
 
         expected<bool, string> parse_true()
         {
-            return parse( "true" ).transform( []() { return true; } );
+            return parse( "true" ).transform( []() { return true; } );   // if parse_value() fails, the error will be propagated.
         }
 
         expected<bool, string> parse_false()
         {
-            return parse( "false" ).transform( []() { return false; } );
+            return parse( "false" ).transform( []() { return false; } ); // if parse_value() fails, the error will be propagated.
         }
 
         expected<Null, string> parse_null()
         {
-            return parse( "null" ).transform( []() { return Null(); } );
+            return parse( "null" ).transform( []() { return Null(); } ); // if parse_value() fails, the error will be propagated.
         }
 
         string where() const

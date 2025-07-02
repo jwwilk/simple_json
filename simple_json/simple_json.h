@@ -6,10 +6,10 @@
 
 #pragma once
 #include <expected>
-#include <vector>
 #include <map>
 #include <string>
 #include <variant>
+#include <vector>
 
 namespace simple_json
 {
@@ -17,14 +17,25 @@ namespace simple_json
     struct Array;
 
     struct Null // a JSON null value.
-    {}; 
+    {
+    };
 
     using Value = std::variant<std::string, bool, int64_t, Null, Array, Object>;
 
+    // A JSON array is a vector of JSON values.
+    //
+    // (It would be nicer for Array and Object to be type aliases, e.g.
+    //
+    //     using Array = public std::vector<Value>;
+    //
+    // but you can't forward declare type aliases.)
+    //
     struct Array : public std::vector<Value>
     {
     };
 
+    // A JSON object is a map of string/Values pairs.
+    //
     struct Object : public std::map<std::string, Value>
     {
     };

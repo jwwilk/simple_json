@@ -13,12 +13,7 @@ namespace
     {
         expected<Value, string> obj = parse( json_str );
 
-        if ( !obj )
-        {
-            cout << obj.error() << endl;
-            cout << "";
-        }
-        cout << *obj << endl;
+        ASSERT_TRUE( obj );
 
         ostringstream os;
         os << *obj;
@@ -337,9 +332,10 @@ TEST( Simple_json_test, test_whitespace_ignored )
 
     expected<Value, string> obj = parse( json_str );
 
+    ASSERT_TRUE( obj );
+
     ostringstream os;
     os << *obj;
-    cout << *obj;
 
     const string expected = "{\n"
                             "    \" foo 1  \" : \"  bar 1  \",\n"
