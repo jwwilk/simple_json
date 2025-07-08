@@ -11,12 +11,16 @@ namespace
 {
     void check_json( const string& json_str )
     {
-        expected<Value, string> obj = parse( json_str );
+        expected<Value, string> value = parse( json_str );
 
-        ASSERT_TRUE( obj );
+        if ( !value )
+        {
+            FAIL() << "Failed to parse JSON: " << value.error();
+            return;
+        }
 
         ostringstream os;
-        os << *obj;
+        os << *value;
         EXPECT_EQ( json_str, os.str() );
     }
 
@@ -346,6 +350,68 @@ TEST( Simple_json_test, test_whitespace_ignored )
     EXPECT_EQ( os.str(), expected );
 }
 
+namespace
+{
+    void test_escape_chars_2( const string& json_str, const string& expected_result )
+    {
+        const string json_obj_str( string( "{\n    \"" ) + json_str + "\" : \"" + json_str + "\"\n}" );
+
+        std::expected<Value, std::string> value = parse( json_obj_str );
+
+        if ( !value )
+        {
+            FAIL() << "Failed to parse JSON: " << value.error();
+            return;
+        }
+
+        ASSERT_TRUE( std::holds_alternative<Object>( *value ) );
+        const Object& obj = std::get<Object>( *value );
+        ASSERT_EQ( obj.size(), 1 );
+        const auto& pair = *obj.begin();
+        EXPECT_EQ( pair.first, expected_result );
+
+        ASSERT_TRUE( std::holds_alternative<string>( pair.second ) );
+        EXPECT_EQ( std::get<string>( pair.second ), expected_result );
+
+        ostringstream os;
+        os << *value;
+        EXPECT_EQ( os.str(), json_obj_str );
+    }
+
+    void test_escape_chars( const string& json_str, const string& expected_result )
+    {
+        test_escape_chars_2( json_str, expected_result );
+
+        test_escape_chars_2( "a" + json_str, "a" + expected_result );
+        test_escape_chars_2( json_str + "b", expected_result + "b" );
+        test_escape_chars_2( "a" + json_str + "b", "a" + expected_result + "b" );
+
+        test_escape_chars_2( "12" + json_str, "12" + expected_result );
+        test_escape_chars_2( json_str + "12", expected_result + "12" );
+        test_escape_chars_2( "12" + json_str + "34", "12" + expected_result + "34" );
+
+        test_escape_chars_2( "123" + json_str, "123" + expected_result );
+        test_escape_chars_2( json_str + "123", expected_result + "123" );
+        test_escape_chars_2( "123" + json_str + "344", "123" + expected_result + "344" );
+    }
+} // namespace
+
+TEST( Simple_json_test, test_escape_chars )
+{
+    // check_json( R"("a \"quoted\" string")" );
+    test_escape_chars( "X", "X" );
+    test_escape_chars( "\\\"", "\"" );
+    test_escape_chars( "\\t", "\t" );
+    test_escape_chars( "\\b", "\b" );
+    test_escape_chars( "\\f", "\f" );
+    test_escape_chars( "\\n", "\n" );
+    test_escape_chars( "\\r", "\r" );
+    test_escape_chars( "\\/", "/" );
+    test_escape_chars( "\\\\", "\\" );
+    test_escape_chars( "\\n\\r", "\n\r" );
+    test_escape_chars( "\\\"\\n\\r\\t\\b\\/", "\"\n\r\t\b/" );
+}
+
 TEST( Simple_json_test, test_parsing_invalid_strings )
 {
     check_invalid( R"("foo":"bar"})", "unprocessed data at line 1 column 6" );
@@ -371,6 +437,7 @@ TEST( Simple_json_test, test_parsing_invalid_strings )
     check_invalid( "[", "missing closing ']' at line 1 column 2" );
     check_invalid( "  [", "missing closing ']' at line 1 column 4" );
     check_invalid( "  [  ", "missing closing ']' at line 1 column 6" );
+    check_invalid( R"("foo \q bar")", "invalid escape character '\\q' at line 1 column 7" );
 
     check_invalid( "{\n"
                    "    \"foo_1\" : 123456789,\n"

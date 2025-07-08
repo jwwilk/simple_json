@@ -4,6 +4,7 @@
 #include "simple_json.h"
 #include <charconv>
 #include <iostream>
+#include <optional>
 
 using namespace simple_json;
 using namespace std;
@@ -227,17 +228,40 @@ namespace
         {
             posn_.incr(); // Skip the opening '"'
 
-            const string::const_iterator str_start = posn_();
+            string result;
+
+            bool prev_esc = false;
 
             for ( ; posn_() != end_; posn_.incr() ) // we don't want to skip whitespace here
             {
-                if ( *posn_() == '"' )
+                if ( prev_esc )
                 {
-                    const string::const_iterator str_end = posn_();
+                    const char* alph_esc_chars = "bfnrt\"\\/";     // alphabetic escape characters
+                    const char* bin_esc_chars = "\b\f\n\r\t\"\\/"; // their binary equivalents
 
+                    const char* esc_pos = strchr( alph_esc_chars, *posn_() );
+                    if ( esc_pos == nullptr )
+                    {
+                        return std::unexpected( string( "invalid escape character '\\" ) + *posn_() + "'" + where() );
+                    }
+
+                    result.push_back( bin_esc_chars[ esc_pos - &alph_esc_chars[ 0 ] ] );
+
+                    prev_esc = false;
+                }
+                else if ( *posn_() == '"' )
+                {
                     posn_.incr(); // Skip the closing '"'
 
-                    return string( str_start, str_end );
+                    return result;
+                }
+                else if ( *posn_() == '\\' )
+                {
+                    prev_esc = true;
+                }
+                else
+                {
+                    result.push_back( *posn_() );
                 }
             }
 
@@ -277,7 +301,7 @@ namespace
 
         expected<bool, string> parse_true()
         {
-            return parse( "true" ).transform( []() { return true; } );   // if parse_value() fails, the error will be propagated.
+            return parse( "true" ).transform( []() { return true; } ); // if parse_value() fails, the error will be propagated.
         }
 
         expected<bool, string> parse_false()
@@ -380,7 +404,28 @@ namespace
 
         void format( const string& s ) const
         {
-            os_ << '"' << s << '"';
+            const char* alph_esc_chars = "bfnrt";     // alphabetic escape characters
+            const char* bin_esc_chars = "\b\f\n\r\t"; // their binary equivalents
+
+            os_ << '"';
+            
+            for ( const char c : s )
+            {
+                if ( c == '"' || c == '\\' || c == '/' )
+                {
+                    os_ << '\\' << c; // escape quotes and backslashes
+                }
+                else if ( const char* pos = strchr( bin_esc_chars, c ) ) // non-printable characters
+                {
+                    os_ << '\\' << alph_esc_chars[ pos - &bin_esc_chars[ 0 ] ];
+                }
+                else
+                {
+                    os_ << c; // printable character
+                }
+            }
+                
+            os_ << '"';
         }
 
         void format( const Object& obj, int level ) const
