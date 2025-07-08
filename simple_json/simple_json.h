@@ -2,7 +2,7 @@
 // Copyright John W. Wilkinson 2025
 //
 // Parses and formats JSON.
-// Does not support real numbers or escaping of characters. No Unicode support.
+// Does not support real numbers. No Unicode support.
 
 #pragma once
 #include <expected>
