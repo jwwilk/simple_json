@@ -13,14 +13,14 @@ FetchContent_MakeAvailable(googletest)
 enable_testing()
 
 # Add source to this project's executable.
-add_executable (test "simple_json_test.cpp")
+add_executable (simple_json_test "simple_json_test.cpp")
 
 # Link test with main library and GoogleTest
-target_link_libraries(test
+target_link_libraries(simple_json_test
     PRIVATE
     simple_json
     gtest_main
 )
 
 include(GoogleTest)
-gtest_discover_tests(test)
+gtest_discover_tests(simple_json_test)

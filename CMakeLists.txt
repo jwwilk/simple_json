@@ -10,4 +10,4 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)   # enforce the standard (don’t allow fall
 set(CMAKE_CXX_EXTENSIONS OFF)         # disable compiler-specific extensions (like GNU++17)
 
 add_subdirectory ("simple_json")
-add_subdirectory ("test")
+add_subdirectory ("simple_json_test")
