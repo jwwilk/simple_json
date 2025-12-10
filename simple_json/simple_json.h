@@ -32,12 +32,14 @@ namespace simple_json
     //
     struct Array : public std::vector<Value>
     {
+        using std::vector<Value>::vector; // inherit all constructors
     };
 
     // A JSON object is a map of string/Values pairs.
     //
     struct Object : public std::map<std::string, Value>
     {
+        using std::map<std::string, Value>::map; // inherit all constructors
     };
 
     // parses a JSON string and return an Object or an error message
@@ -47,4 +49,21 @@ namespace simple_json
     // formats an Object as a JSON string and writes it to the output stream
     //
     std::ostream& operator<<( std::ostream& os, const Value& value );
+
+    // helper to get a value from a JSON object
+    template <typename T>
+    std::expected<T, std::string> get_value( const simple_json::Object& obj, const std::string& key )
+    {
+        auto it = obj.find( key );
+        if ( it == obj.end() )
+        {
+            return std::unexpected( "field \"" + key + "\" not found" );
+        }
+        if ( auto ptr = std::get_if<T>( &( it->second ) ) )
+        {
+            return *ptr;
+        }
+        return std::unexpected( "field \"" + key + "\" is not the expected type" );
+    }
+
 } // namespace simple_json

@@ -445,3 +445,142 @@ TEST( Simple_json_test, test_parsing_invalid_strings )
                    "}",
                    "missing ':' at line 3 column 13" );
 }
+
+namespace
+{
+    struct Student
+    {
+        string name;
+        int age;
+        std::vector<int> grades;
+    };
+
+    std::expected<Student, std::string> parse_student_obj( const std::string& json_str )
+    {
+        auto value = simple_json::parse( json_str );
+
+        if ( !value )
+        {
+            return std::unexpected( value.error() );
+        }
+
+        Object* obj = get_if<Object>( &*value );
+        if ( !obj )
+        {
+            return std::unexpected( "JSON root is not an object" );
+        }
+
+        const auto name = get_value<string>( *obj, "name" );
+        if ( !name )
+        {
+            return std::unexpected( name.error() );
+        }
+
+        const auto age = get_value<int64_t>( *obj, "age" );
+        if ( !age )
+        {
+            return std::unexpected( age.error() );
+        }
+
+        const auto grades_array = get_value<Array>( *obj, "grades" );
+        if ( !grades_array )
+        {
+            return std::unexpected( grades_array.error() );
+        }
+
+        std::vector<int> grades;
+        for ( const auto& grade_value : *grades_array )
+        {
+            const int64_t* grade_ptr = get_if<int64_t>( &grade_value );
+            if ( !grade_ptr )
+            {
+                return std::unexpected( "array \"grade\" contains a non integer value" );
+            }
+            grades.push_back( *grade_ptr );
+        }
+
+        return { Student{ *name, (int)*age, grades } };
+    }
+} // namespace
+
+TEST( Simple_json_test, test_git_hub_readme )
+{
+    const Student alice{ "Alice", 20, { 85, 90, 78 } };
+
+    Object alice_obj;
+    alice_obj[ "name" ] = alice.name;
+    alice_obj[ "age" ] = alice.age;
+    alice_obj[ "grades" ] = Array{ alice.grades.begin(), alice.grades.end() };
+
+    ostringstream os;
+    os << alice_obj;
+    EXPECT_EQ( os.str(), "{\n"
+                         "    \"age\" : 20,\n"
+                         "    \"grades\" : [\n"
+                         "        85, 90, 78\n"
+                         "    ],\n"
+                         "    \"name\" : \"Alice\"\n"
+                         "}" );
+
+    //
+
+    const string bob_json = "{\n"
+                            "    \"age\" : 21,\n"
+                            "    \"grades\" : [\n"
+                            "        55, 69, 64\n"
+                            "    ],\n"
+                            "    \"name\" : \"Bob\"\n"
+                            "}";
+
+    auto value = parse_student_obj( bob_json );
+
+    ASSERT_TRUE( value );
+
+    const Student& bob = *value;
+    EXPECT_EQ( bob.name, "Bob" );
+    EXPECT_EQ( bob.age, 21 );
+
+    ASSERT_EQ( bob.grades.size(), 3 );
+    EXPECT_EQ( bob.grades[ 0 ], 55 );
+    EXPECT_EQ( bob.grades[ 1 ], 69 );
+    EXPECT_EQ( bob.grades[ 2 ], 64 );
+
+    //
+
+    value = parse_student_obj( "[1,]" );
+    ASSERT_FALSE( value );
+    EXPECT_EQ( value.error(), "unexpected character ']' at line 1 column 4" );
+
+    value = parse_student_obj( "[1,2,3]" );
+    ASSERT_FALSE( value );
+    EXPECT_EQ( value.error(), "JSON root is not an object" );
+
+    value = parse_student_obj( "{\n"
+                               "    \"grades\" : [\n"
+                               "        55, 69, 64\n"
+                               "    ],\n"
+                               "    \"name\" : \"Bob\"\n"
+                               "}" );
+    ASSERT_FALSE( value );
+    EXPECT_EQ( value.error(), "field \"age\" not found" );
+
+    value = parse_student_obj( "{\n"
+                               "    \"age\" : 21,\n"
+                               "    \"grades\" : [\n"
+                               "        55, 69, 64\n"
+                               "    ],\n"
+                               "    \"name\" : 1234\n"
+                               "}" );
+    ASSERT_FALSE( value );
+    EXPECT_EQ( value.error(), "field \"name\" is not the expected type" );
+
+    value = parse_student_obj( "{\n"
+                               "    \"age\" : 21,\n"
+                               "    \"grades\" : [\n"
+                               "        55, \"foo\", 64\n"
+                               "    ],\n"
+                               "    \"name\" : \"Bob\"\n"
+                               "}" );
+    ASSERT_FALSE( value );
+    EXPECT_EQ( value.error(), "array \"grade\" contains a non integer value" );
+}
