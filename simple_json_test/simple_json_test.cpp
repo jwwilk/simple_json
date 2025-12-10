@@ -584,3 +584,38 @@ TEST( Simple_json_test, test_git_hub_readme )
     ASSERT_FALSE( value );
     EXPECT_EQ( value.error(), "array \"grade\" contains a non integer value" );
 }
+
+#include <chrono>
+
+TEST( Simple_json_test, test_speed )
+{
+    Object obj;
+
+    for ( int i = 0; i < 4000000; ++i )
+    {
+        const string i_str = std::to_string( i );
+        obj.emplace( "test" + i_str, Array{ 1, 222, 33333, "abcdefg", true, false, Null{} } );
+    }
+
+    auto start = std::chrono::steady_clock::now();
+
+    ostringstream os;
+    os << obj;
+
+    //cout << os.str() << endl;
+
+    auto end = std::chrono::steady_clock::now();
+    cout << "write time " << std::chrono::duration_cast<std::chrono::milliseconds>( end - start ) << endl;
+
+    start = std::chrono::steady_clock::now();
+
+    auto value = parse( os.str() );
+    ASSERT_TRUE( value );
+
+    end = std::chrono::steady_clock::now();
+    cout << "read time " <<  std::chrono::duration_cast<std::chrono::milliseconds>( end - start ) << endl;
+
+    auto obj_2 = get_if<Object>( &*value );
+
+    cout << "obj size " << obj.size() << endl;
+}

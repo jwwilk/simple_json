@@ -105,7 +105,7 @@ namespace
                     return std::unexpected( value.error() );
                 }
 
-                arr.push_back( *value );
+                arr.push_back( move( *value ) );
 
                 skip_whitespace();
 
@@ -161,7 +161,7 @@ namespace
                         return std::unexpected( pair.error() );
                     }
 
-                    obj.insert( *pair );
+                    obj.insert( move( *pair ) );
                 }
                 else if ( *posn_() == ',' )
                 {
@@ -220,7 +220,7 @@ namespace
             // Create and return a pair with the parsed name and value.
             // Note if parse_value() fails, the error will be propagated.
             return parse_value().transform( [ & ]( const auto& value ) {
-                return Object::value_type{ *name, value };
+                return Object::value_type{ move( *name ), move( value ) };
             } );
         }
 
@@ -288,12 +288,12 @@ namespace
             return std::unexpected( "could not convert \"" + string( int_start, int_end ) + "\" to an integer" + where() );
         }
 
-        expected<void, string> parse( const string& word )
+        expected<void, string> parse_word( const string& word )
         {
             const size_t len = word.length();
             if ( end_ - posn_() >= len && string( posn_(), posn_() + len ) == word )
             {
-                posn_.incr( len ); // Skip word
+                posn_.incr( len ); // specified word found, skip over it
                 return {};
             }
             return std::unexpected( "expected \"" + word + "\"" + where() );
@@ -301,17 +301,17 @@ namespace
 
         expected<bool, string> parse_true()
         {
-            return parse( "true" ).transform( []() { return true; } ); // if parse_value() fails, the error will be propagated.
+            return parse_word( "true" ).transform( []() { return true; } ); // if parse_word() fails, the error will be propagated.
         }
 
         expected<bool, string> parse_false()
         {
-            return parse( "false" ).transform( []() { return false; } ); // if parse_value() fails, the error will be propagated.
+            return parse_word( "false" ).transform( []() { return false; } ); // if parse_word() fails, the error will be propagated.
         }
 
         expected<Null, string> parse_null()
         {
-            return parse( "null" ).transform( []() { return Null(); } ); // if parse_value() fails, the error will be propagated.
+            return parse_word( "null" ).transform( []() { return Null(); } ); // if parse_word() fails, the error will be propagated.
         }
 
         string where() const
