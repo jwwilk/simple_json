@@ -386,51 +386,58 @@ namespace
     class Formatter
     {
       public:
-        Formatter( std::ostream& os, const Value& value )
-            : os_( os )
+        Formatter( const Value& value )
         {
             format( value, 0 );
         }
 
+        const string& str() const
+        {
+            return str_;
+        }
+
       private:
-        void format( const Object::value_type& member, const int level ) const
+        void format( const Object::value_type& member, const int level )
         {
             format( member.first );
 
-            os_ << " : ";
+            str_ += " : ";
 
             format( member.second, level + 1 );
         }
 
-        void format( const string& s ) const
+        void format( const string& s )
         {
             const char* alph_esc_chars = "bfnrt";     // alphabetic escape characters
             const char* bin_esc_chars = "\b\f\n\r\t"; // their binary equivalents
 
-            os_ << '"';
-            
+            str_ += '"';
+
             for ( const char c : s )
             {
                 if ( c == '"' || c == '\\' || c == '/' )
                 {
-                    os_ << '\\' << c; // escape quotes and backslashes
+                    // add escape quotes and backslashes
+                    str_ += '\\'; 
+                    str_ += c;
                 }
                 else if ( const char* pos = strchr( bin_esc_chars, c ) ) // non-printable characters
                 {
-                    os_ << '\\' << alph_esc_chars[ pos - &bin_esc_chars[ 0 ] ];
+                    str_ += '\\';
+                    str_ += alph_esc_chars[ pos - &bin_esc_chars[ 0 ] ];
                 }
                 else
                 {
-                    os_ << c; // printable character
+                    str_ += c; // printable character
                 }
             }
-                
-            os_ << '"';
+
+            str_ += '"';
         }
 
-        void format( const Object& obj, int level ) const
+        void format( const Object& obj, int level )
         {
-            os_ << "{\n";
+            str_ += "{\n";
 
             int first = true;
             for ( const auto& member : obj )
@@ -441,7 +448,7 @@ namespace
                 }
                 else
                 {
-                    os_ << ",\n";
+                    str_ += ",\n";
                 }
 
                 indent( level + 1 );
@@ -449,14 +456,14 @@ namespace
                 format( member, level );
             }
 
-            os_ << '\n';
+            str_ += '\n';
             indent( level );
-            os_ << '}';
+            str_ += '}';
         }
 
-        void format( const Array& arr, int level ) const
+        void format( const Array& arr, int level )
         {
-            os_ << "[\n";
+            str_ += "[\n";
 
             indent( level + 1 );
 
@@ -469,66 +476,67 @@ namespace
                 }
                 else
                 {
-                    os_ << ", ";
+                    str_ += ", ";
                 }
 
                 format( value, level + 1 );
             }
 
-            os_ << '\n';
+            str_ += '\n';
             indent( level );
-            os_ << ']';
+            str_ += ']';
         }
 
-        void format( const Value& value, const int level ) const
+        void format( const Value& value, const int level )
         {
             struct Visitor
             {
-                const Formatter* formatter;
+                Formatter* formatter;
                 int level;
-                void operator()( const string& s ) const
+                void operator()( const string& s )
                 {
                     formatter->format( s );
                 }
-                void operator()( const Object& obj ) const
+                void operator()( const Object& obj )
                 {
                     formatter->format( obj, level );
                 }
-                void operator()( const Array& arr ) const
+                void operator()( const Array& arr )
                 {
                     formatter->format( arr, level );
                 }
-                void operator()( int64_t i ) const
+                void operator()( int64_t i )
                 {
-                    formatter->os_ << i;
+                    formatter->str_ += to_string( i );
                 }
-                void operator()( bool b ) const
+                void operator()( bool b )
                 {
-                    formatter->os_ << ( b ? "true" : "false" );
+                    formatter->str_ += ( b ? "true" : "false" );
                 }
-                void operator()( const Null& ) const
+                void operator()( const Null& )
                 {
-                    formatter->os_ << "null";
+                    formatter->str_ += "null";
                 }
             };
 
             std::visit( Visitor{ this, level }, value );
         }
 
-        void indent( int level ) const
+        void indent( int level )
         {
             for ( int i = 0; i < level; ++i )
             {
-                os_ << "    ";
+                str_ += "    ";
             }
         }
-        std::ostream& os_;
+        string str_;
     };
 } // namespace
 
 std::ostream&
 simple_json::operator<<( std::ostream& os, const simple_json::Value& value )
 {
-    Formatter( os, value );
+    Formatter formatter( value );
+    os << formatter.str();
     return os;
 }
