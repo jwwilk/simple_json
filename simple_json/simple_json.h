@@ -10,6 +10,7 @@
 #include <string>
 #include <variant>
 #include <vector>
+#include <functional>
 
 namespace simple_json
 {
@@ -52,7 +53,7 @@ namespace simple_json
 
     // helper to get a value from a JSON object
     template <typename T>
-    std::expected<T, std::string> get_value( const simple_json::Object& obj, const std::string& key )
+    std::expected<std::reference_wrapper<const T>, std::string> get_value( const simple_json::Object& obj, const std::string& key )
     {
         auto it = obj.find( key );
         if ( it == obj.end() )
@@ -61,7 +62,7 @@ namespace simple_json
         }
         if ( auto ptr = std::get_if<T>( &( it->second ) ) )
         {
-            return *ptr;
+            return std::cref( *ptr );
         }
         return std::unexpected( "field \"" + key + "\" is not the expected type" );
     }

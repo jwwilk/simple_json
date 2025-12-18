@@ -3,6 +3,7 @@
 
 #include "simple_json.h"
 #include <gtest/gtest.h>
+#include <chrono>
 
 using namespace simple_json;
 using namespace std;
@@ -489,7 +490,7 @@ namespace
         }
 
         std::vector<int> grades;
-        for ( const auto& grade_value : *grades_array )
+        for ( const auto grade_value : grades_array->get() )
         {
             const int64_t* grade_ptr = get_if<int64_t>( &grade_value );
             if ( !grade_ptr )
@@ -499,7 +500,7 @@ namespace
             grades.push_back( *grade_ptr );
         }
 
-        return { Student{ *name, (int)*age, grades } };
+        return { Student{ name->get(), (int)age->get(), grades } };
     }
 } // namespace
 
@@ -585,24 +586,27 @@ TEST( Simple_json_test, test_git_hub_readme )
     EXPECT_EQ( value.error(), "array \"grade\" contains a non integer value" );
 }
 
-#include <chrono>
+namespace
+{
+    string key_name( int i )
+    {
+        return "test_" + std::to_string( i );
+    }
+} // namespace
 
-TEST( Simple_json_test, test_speed )
+TEST( DISABLED_Simple_json_test, test_speed )
 {
     Object obj;
 
     for ( int i = 0; i < 4000000; ++i )
     {
-        const string i_str = std::to_string( i );
-        obj.emplace( "test" + i_str, Array{ 1, 222, 33333, "abcdefg", true, false, Null{} } );
+        obj.emplace( key_name(i), Array{ i, 222, 33333, "abcdefg", true, false, Null{} } );
     }
 
     auto start = std::chrono::steady_clock::now();
 
     ostringstream os;
     os << obj;
-
-    //cout << os.str() << endl;
 
     auto end = std::chrono::steady_clock::now();
     cout << "write time " << std::chrono::duration_cast<std::chrono::milliseconds>( end - start ) << endl;
@@ -618,4 +622,37 @@ TEST( Simple_json_test, test_speed )
     auto obj_2 = get_if<Object>( &*value );
 
     cout << "obj size " << obj.size() << endl;
+}
+
+TEST( DISABLED_Simple_json_test, test_get_value_speed )
+{
+    Object toplevel_obj;
+
+    auto [ it, inserted ] = toplevel_obj.emplace( "toplevel", Object{} );
+
+    ASSERT_TRUE( inserted );
+    Value& val = it->second;
+    Object& obj = std::get<Object>( val );
+
+    for ( int i = 0; i < 10000000; ++i )
+    {
+        obj.emplace( key_name(i), Array{ i, 222, 33333, "abcdefg", true, false, Null{} } );
+    }
+
+    auto start = std::chrono::steady_clock::now();
+
+    //cout << toplevel_obj << endl;
+
+    int ensure_not_optimised_away = 0;
+    for ( int i = 0; i < obj.size(); ++i )
+    {
+        const auto arr = get_value<Array>( obj, key_name( i ) );
+        ASSERT_TRUE( arr );
+        ensure_not_optimised_away += arr->get().size();
+    }
+
+    auto end = std::chrono::steady_clock::now();
+
+    cout << "num arrays " << ensure_not_optimised_away << endl;
+    cout << "read time " << std::chrono::duration_cast<std::chrono::milliseconds>( end - start ) << endl;
 }
