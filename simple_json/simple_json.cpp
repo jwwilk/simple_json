@@ -105,7 +105,7 @@ namespace
                     return std::unexpected( value.error() );
                 }
 
-                arr.push_back( move( *value ) );
+                arr.push_back( std::move( *value ) );
 
                 skip_whitespace();
 
@@ -161,7 +161,7 @@ namespace
                         return std::unexpected( pair.error() );
                     }
 
-                    obj.insert( move( *pair ) );
+                    obj.insert( std::move( *pair ) );
                 }
                 else if ( *posn_() == ',' )
                 {
@@ -220,7 +220,7 @@ namespace
             // Create and return a pair with the parsed name and value.
             // Note if parse_value() fails, the error will be propagated.
             return parse_value().transform( [ & ]( const auto& value ) {
-                return Object::value_type{ move( *name ), move( value ) };
+                return Object::value_type{ std::move( *name ), std::move( value ) };
             } );
         }
 
