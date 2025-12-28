@@ -533,11 +533,11 @@ TEST( Simple_json_test, test_git_hub_readme )
                             "    \"name\" : \"Bob\"\n"
                             "}";
 
-    auto value = parse_student_obj( bob_json );
+    auto result = parse_student_obj( bob_json );
 
-    ASSERT_TRUE( value );
+    ASSERT_TRUE( result ); // parsing succeeded
 
-    const Student& bob = *value;
+    const Student& bob = *result;
     EXPECT_EQ( bob.name, "Bob" );
     EXPECT_EQ( bob.age, 21 );
 
@@ -548,42 +548,42 @@ TEST( Simple_json_test, test_git_hub_readme )
 
     //
 
-    value = parse_student_obj( "[1,]" );
-    ASSERT_FALSE( value );
-    EXPECT_EQ( value.error(), "unexpected character ']' at line 1 column 4" );
+    result = parse_student_obj( "[1,]" );
+    ASSERT_FALSE( result );
+    EXPECT_EQ( result.error(), "unexpected character ']' at line 1 column 4" );
 
-    value = parse_student_obj( "[1,2,3]" );
-    ASSERT_FALSE( value );
-    EXPECT_EQ( value.error(), "JSON root is not an object" );
+    result = parse_student_obj( "[1,2,3]" );
+    ASSERT_FALSE( result );
+    EXPECT_EQ( result.error(), "JSON root is not an object" );
 
-    value = parse_student_obj( "{\n"
+    result = parse_student_obj( "{\n"
                                "    \"grades\" : [\n"
                                "        55, 69, 64\n"
                                "    ],\n"
                                "    \"name\" : \"Bob\"\n"
                                "}" );
-    ASSERT_FALSE( value );
-    EXPECT_EQ( value.error(), "field \"age\" not found" );
+    ASSERT_FALSE( result );
+    EXPECT_EQ( result.error(), "field \"age\" not found" );
 
-    value = parse_student_obj( "{\n"
+    result = parse_student_obj( "{\n"
                                "    \"age\" : 21,\n"
                                "    \"grades\" : [\n"
                                "        55, 69, 64\n"
                                "    ],\n"
                                "    \"name\" : 1234\n"
                                "}" );
-    ASSERT_FALSE( value );
-    EXPECT_EQ( value.error(), "field \"name\" is not the expected type" );
+    ASSERT_FALSE( result );
+    EXPECT_EQ( result.error(), "field \"name\" is not the expected type" );
 
-    value = parse_student_obj( "{\n"
+    result = parse_student_obj( "{\n"
                                "    \"age\" : 21,\n"
                                "    \"grades\" : [\n"
                                "        55, \"foo\", 64\n"
                                "    ],\n"
                                "    \"name\" : \"Bob\"\n"
                                "}" );
-    ASSERT_FALSE( value );
-    EXPECT_EQ( value.error(), "array \"grade\" contains a non integer value" );
+    ASSERT_FALSE( result );
+    EXPECT_EQ( result.error(), "array \"grade\" contains a non integer value" );
 }
 
 namespace
